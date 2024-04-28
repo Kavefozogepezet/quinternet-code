@@ -1,29 +1,28 @@
 from qubit import *
 from noise import *
+from gate import *
 import numpy as np
 from matplotlib import pyplot as plt
+import qutip as q
+
 
 if __name__ == '__main__':
-    cs = []
-    angles = []
+    bloch = q.Bloch()
 
-    print(Gate.X.c(up=False))
-
-    for i in range(100):
-        state = QState(qubits=4)
-        apply_unitary(state, [Gate.H, 3])
-        apply_unitary(state, [Gate.X.c(), 2])
-
-        apply_unitary(state, [3, Gate.H])
-        apply_unitary(state, [2, Gate.X.c(up=False)])
-
-        print(state)
+    for i in range(20):
+        state = QState(qubits=1)
+        apply_unitary(state, Gate.H)
 
         #apply_depol(state, 1, i, 0.2)
-        apply_tvapd(state, 1, i/10000, 0.01)
-        print(np.trace(state.state))
-        cs.append(state.concurrence())
-        angles.append(i)
+        apply_tvapd(state, 0, i/500, 0.01, 0.02)
 
+        u = 2 * state.mat[0, 1].real
+        v = 2 * state.mat[1, 0].imag
+        w = state.mat[0, 0].real - state.mat[1, 1].real
+
+        bloch.add_points([u, v, w])
+        print(np.trace(state.mat))
+
+    bloch.show()
     #plt.plot(angles, cs)
-    #plt.show()
+    plt.show()

@@ -1,4 +1,5 @@
 from qubit import *
+from gate import *
 import numpy as np
 
 
@@ -11,8 +12,8 @@ def apply_tvapd(state, target, dt, t1, t2=None):
     - state: The quantum state on which the operation is applied,
     - target: The index of the target qubit,
     - dt: The time spent in the tvad channel,
-    - t1: The relaxation time constant,
-    - t2: The dephasing time constant (optional, default is t1/2).
+    - t1: The relaxation time,
+    - t2: The dephasing time (optional, default is 2*t1).
 
     '''
     g = 1 - np.e**(-dt/t1)
@@ -31,10 +32,20 @@ def apply_tvapd(state, target, dt, t1, t2=None):
         [0, np.sqrt((1-g)*l)]
     ])
 
-    apply_kraus(state, target, E0, E1, E2)
+    apply_kraus_to(state, target, E0, E1, E2)
 
 
 def apply_depol(state, target, L, alpha):
+    '''
+    Applies depolarizing noise to a qubit.
+
+    Parameters:
+    ---
+    - state: The quantum state on which the operation is applied,
+    - target: The index of the target qubit,
+    - L: The length of the medium,
+    - alpha: The attenuation of the medium.
+    '''
     p = 1 - 10**(-alpha*L/10)
 
     E0 = Gate(np.eye(2) * np.sqrt(1-p))
@@ -42,4 +53,4 @@ def apply_depol(state, target, L, alpha):
     E2 = Gate(Gate.Y.mat * np.sqrt(p/3))
     E3 = Gate(Gate.Z.mat * np.sqrt(p/3))
 
-    apply_kraus(state, target, E0, E1, E2, E3)
+    apply_kraus_to(state, target, E0, E1, E2, E3)
