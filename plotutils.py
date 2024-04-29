@@ -28,5 +28,5 @@ def size_correction(fig, sx=0, sy=0):
 def export_plot(fig, filename: str, width: float):
     size = fig.get_size_inches()
     fig.set_size_inches(width, size[1]/size[0]*width)
-    #fig.tight_layout(pad=0)
+    fig.tight_layout(pad=0)
     plt.savefig(filename)

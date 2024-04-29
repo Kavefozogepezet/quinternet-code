@@ -1,9 +1,6 @@
 from qubit import *
 from gate import *
 from noise import *
-import matplotlib.pyplot as plt
-import qutip as q
-import plotutils as pu
 
 
 def trace_out_middle(state):
@@ -15,7 +12,7 @@ def trace_out_middle(state):
         mat1 = np.kron(np.kron(I, base), I)
         mat2 = np.kron(np.kron(I, base.T), I)
         result += mat1 @ state.mat @ mat2
-    return result
+    state.mat = result
 
 
 def projection_to(base):
@@ -40,23 +37,38 @@ def swap_entanglement(state):
     apply_kraus(state, K0, K1, K2, K3)
 
 
-def sim_single_connection(length, refrac, alpha, t1, t2):
+def sim_single_connection(length, refrac, alpha, t1, t2, sim_atennuation=False, sim_noise=True):
     state = QState(qubits=4)
     apply_unitary(state, [Gate.H, 2, Gate.H])
     apply_unitary(state, [Gate.X.c(), Gate.X.c(up=False)])
 
-    dt = length * refrac / 300_000
-    apply_tvapd(state, 0, dt, t1, t2)
-    apply_depol(state, 1, length, alpha)
-    apply_depol(state, 2, length, alpha)
-    apply_tvapd(state, 0, dt, t1, t2)
+    if sim_noise:
+        dt = length * refrac / 300_000
+        apply_tvapd(state, 0, dt, t1, t2)
+        apply_depol(state, 1, length, alpha)
+        apply_depol(state, 2, length, alpha)
+        apply_tvapd(state, 0, dt, t1, t2)
 
     swap_entanglement(state)
-    state.mat = trace_out_middle(state)
-    return state
+    trace_out_middle(state)
+
+    if not sim_atennuation:
+        return state
+    else:
+        tries = 0
+        p_loss = 1 - 10**(-alpha*length/10)
+        while tries < 100:
+            tries += 1
+            p1, p2 = np.random.rand(2)
+            if p1 > p_loss and p2 > p_loss:
+                return state, tries
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    import qutip as q
+    import plotutils as pu
+
     state = sim_single_connection(10, 1.5, 0.1, 0.001, 0.002)
     fig, ax = q.matrix_histogram(state.mat, bar_style='abs', colorbar=False)
     ax.xaxis.set_tick_params(labelsize=10, pad=-5)
@@ -65,20 +77,22 @@ if __name__ == '__main__':
     pu.export_plot(fig, 'direct_mat.pgf', 3)
     plt.clf()
 
-    lengths = np.linspace(0, 10, 10)
+    lengths = np.linspace(0, 20, 11)
     fy = np.zeros_like(lengths)
     cy = np.zeros_like(lengths)
+
+    ideal = np.zeros((4, 1))
+    ideal[0] = ideal[3] = 1/np.sqrt(2)
+    
     for i, length in enumerate(lengths):
         state = sim_single_connection(length, 1.5, 0.1, 0.001, 0.002)
-        ideal = np.zeros((4, 1))
-        ideal[0] = 1/np.sqrt(2)
-        ideal[3] = 1/np.sqrt(2)
-        print(ideal)
         fy[i] = state.fidelity(ideal)
         cy[i] = state.concurrence()
 
-    plt.plot(lengths, fy, label='Fidelity', marker='s')
-    plt.plot(lengths, cy, label='Concurrence', marker='^')
+    plt.plot(lengths, fy, label='fidelity', marker='s')
+    plt.plot(lengths, cy, label='concurrence', marker='^')
+    plt.xlabel('hossz (km)')
+    plt.ylabel('fidelity / concurrence')
     plt.ylim(0, 1.2)
     legend = plt.legend()
     pu.styled_legend(legend)

@@ -41,7 +41,7 @@ class QState:
     
 
     def fidelity(self, ideal):
-        return (ideal.conj().T @ self.mat @ ideal).real
+        return float((ideal.conj().T @ self.mat @ ideal).real)
     
 
     def bloch(self):
@@ -55,3 +55,10 @@ class QState:
         mat = np.zeros((2**qubits, 2**qubits))
         mat[base, base] = 1
         return QState(init_mat=mat)
+    
+
+    def combine(*states):
+        result = states[0]
+        for state in states[1:]:
+            result.mat = np.kron(result.mat, state.mat)
+        return result
