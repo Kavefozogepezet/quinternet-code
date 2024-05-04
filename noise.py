@@ -7,14 +7,18 @@ def apply_tvapd(state, target, dt, t1, t2=None):
     '''
     Applies time-varying amplitude damping to a qubit.
 
-    Parameters:
-    ---
-    - state: The quantum state on which the operation is applied,
-    - target: The index of the target qubit,
-    - dt: The time spent in the tvad channel,
-    - t1: The relaxation time,
-    - t2: The dephasing time (optional, default is 2*t1).
-
+    Parameters
+    ----------
+    state: QState
+        The quantum state on which the operation is applied,
+    target: int
+        The index of the target qubit,
+    dt: float
+        The time spent in the tvad channel,
+    t1: float
+        The relaxation time,
+    t2: float
+        The dephasing time (optional, default is 2*t1).
     '''
     g = 1 - np.e**(-dt/t1)
     l = 0 if t2 is None else 1 - np.e**(dt/t1 - 2*dt/t2)
@@ -39,12 +43,16 @@ def apply_depol(state, target, L, alpha):
     '''
     Applies depolarizing noise to a qubit.
 
-    Parameters:
-    ---
-    - state: The quantum state on which the operation is applied,
-    - target: The index of the target qubit,
-    - L: The length of the medium,
-    - alpha: The attenuation of the medium.
+    Parameters
+    ----------
+    state: QState
+        The quantum state on which the operation is applied,
+    target: int
+        The index of the target qubit,
+    L: float
+        The length of the medium,
+    alpha: float
+        The attenuation of the medium.
     '''
     p = 1 - 10**(-alpha*L/10)
 
